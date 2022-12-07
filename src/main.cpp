@@ -1,6 +1,4 @@
 #include "main.hpp"
-#include "SettingsViewController.hpp"
-#include "ModConfig.hpp"
 #include "questui/shared/QuestUI.hpp"
 
 static ModInfo modInfo;
@@ -33,9 +31,6 @@ extern "C" void load() {
     il2cpp_functions::Init();
 
     QuestUI::Init();
-    QuestUI::Register::RegisterModSettingsViewController<endlessmode::SettingsViewController*>(modInfo, "EndlessMode");
-
-    getModConfig().Init(modInfo);
 
     getLogger().info("Installing hooks...");
     Hooks::InstallHooks(getLogger());

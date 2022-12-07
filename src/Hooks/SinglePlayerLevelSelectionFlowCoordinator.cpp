@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include "SongManager.hpp"
+
 #include "bs-utils/shared/utils.hpp"
 
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
@@ -15,7 +16,6 @@ MAKE_AUTO_HOOK_MATCH(SinglePlayerLevelSelectionFlowCoordinator_ActionButtonWasPr
 
 MAKE_AUTO_HOOK_MATCH(LevelSelectionFlowCoordinator_DidActivate, &LevelSelectionFlowCoordinator::DidActivate, void, LevelSelectionFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
 {
-    LevelSelectionFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
     bs_utils::Submission::enable(getModInfo());
-    //EndlessMode::SongManager::SetShouldContinue(false);
+    LevelSelectionFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
