@@ -40,6 +40,11 @@
       "id": "config-utils",
       "versionRange": "^1.0.1",
       "additionalData": {}
+    },
+    {
+      "id": "bs-utils",
+      "versionRange": "^0.7.2",
+      "additionalData": {}
     }
   ],
   "additionalData": {}

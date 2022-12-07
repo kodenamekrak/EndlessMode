@@ -5,6 +5,10 @@
 
 static ModInfo modInfo;
 
+ModInfo& getModInfo() {
+    return modInfo;
+}
+
 Configuration& getConfig() {
     static Configuration config(modInfo);
     config.Load();

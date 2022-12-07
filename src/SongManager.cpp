@@ -1,6 +1,8 @@
 #include "main.hpp"
 #include "SongManager.hpp"
 
+#include "bs-utils/shared/utils.hpp"
+
 // Level collection
 #include "GlobalNamespace/IPreviewBeatmapLevel.hpp"
 #include "GlobalNamespace/LevelCollectionNavigationController.hpp"
@@ -34,10 +36,20 @@
 #include "GlobalNamespace/PlayerData.hpp"
 #include "GlobalNamespace/PlayerDataModel.hpp"
 
+
+// Saving scores
+#include "GlobalNamespace/IReadonlyBeatmapData.hpp"
+#include "GlobalNamespace/SoloFreePlayFlowCoordinator.hpp"
+#include "GlobalNamespace/PlayerAllOverallStatsData.hpp"
+#include "GlobalNamespace/PlayerAllOverallStatsData_PlayerOverallStatsData.hpp"
+#include "GlobalNamespace/PlayerLevelStatsData.hpp"
+#include "GlobalNamespace/LevelCompletionResultsHelper.hpp"
+#include "GlobalNamespace/ResultsViewController.hpp"
+
+
 #include "custom-types/shared/delegate.hpp"
 
 #include "System/Action_2.hpp"
-
 
 #include "UnityEngine/Resources.hpp"
 
@@ -46,9 +58,21 @@
 using namespace GlobalNamespace;
 
 ArrayW<IPreviewBeatmapLevel*> previewBeatmapLevels;
+bool shouldContinue;
 
 namespace EndlessMode::SongManager
 {
+
+    void SetShouldContinue(bool value)
+    {
+        shouldContinue = value;
+    }
+
+    bool GetShouldContinue()
+    {
+        return shouldContinue;
+    }
+
     void CollectSongs()
     {
         auto levelCollectionNavigationController = UnityEngine::Resources::FindObjectsOfTypeAll<LevelCollectionNavigationController*>().FirstOrDefault();
@@ -57,15 +81,44 @@ namespace EndlessMode::SongManager
         getLogger().info("Collected %lu beatmaps", previewBeatmapLevels.Length());
     }
 
+
+    // Basically same as base game but doesnt call ResultsViewController since it causes issues
+    void LevelCompleted(LevelCompletionResults* completionResults, IReadonlyBeatmapData* transformedBeatmapData, IDifficultyBeatmap* difficultyBeatmap, GameplayModifiers* gameplayModifiers)
+    {
+        getLogger().info("Saving score for song");
+        auto soloFreePlayFlowCoordinator = UnityEngine::Resources::FindObjectsOfTypeAll<SoloFreePlayFlowCoordinator*>().FirstOrDefault();
+        auto playerDataModel = soloFreePlayFlowCoordinator->playerDataModel;
+
+        playerDataModel->playerData->playerAllOverallStatsData->UpdateSoloFreePlayOverallStatsData(completionResults, difficultyBeatmap);
+        playerDataModel->Save();
+
+        auto playerLevelStatsData = playerDataModel->playerData->GetPlayerLevelStatsData(difficultyBeatmap);
+        bool newHighScore = playerLevelStatsData->highScore < completionResults->modifiedScore;
+
+        playerDataModel->playerData->IncreaseNumberOfGameplays(playerLevelStatsData);
+
+        playerLevelStatsData->UpdateScoreData(completionResults->modifiedScore, completionResults->maxCombo, completionResults->fullCombo, completionResults->rank);
+        playerDataModel->Save();
+
+        if(shouldContinue)
+            GetAndStartNextSong();
+    }
+
     void StartNewSong(IDifficultyBeatmap* difficultyBeatmap)
     {
         getLogger().info("Starting new song");
+        bs_utils::Submission::disable(getModInfo());
+
         auto singlePlayerLevelSelectionFlowCoordinator = UnityEngine::Resources::FindObjectsOfTypeAll<SinglePlayerLevelSelectionFlowCoordinator*>().FirstOrDefault();
         auto playerData = UnityEngine::Resources::FindObjectsOfTypeAll<PlayerDataModel*>().FirstOrDefault()->playerData;
 
         std::function<void(StandardLevelScenesTransitionSetupDataSO*, LevelCompletionResults*)> levelFinished = [singlePlayerLevelSelectionFlowCoordinator](StandardLevelScenesTransitionSetupDataSO* transitionSetupData, LevelCompletionResults* completionResults)
         {
-            singlePlayerLevelSelectionFlowCoordinator->HandleStandardLevelDidFinish(transitionSetupData, completionResults);
+            if(completionResults->levelEndStateType == LevelCompletionResults::LevelEndStateType::Cleared)
+                LevelCompleted(completionResults, transitionSetupData->get_transformedBeatmapData(), transitionSetupData->difficultyBeatmap, transitionSetupData->gameplayModifiers);
+            // Still show level failed screen
+            // else if(completionResults->levelEndStateType == LevelCompletionResults::LevelEndStateType::Failed)
+            //     UnityEngine::Resources::FindObjectsOfTypeAll<ResultsViewController*>().FirstOrDefault()->Init(completionResults, transitionSetupData->get_transformedBeatmapData(), transitionSetupData->difficultyBeatmap, false, false);
         };
         auto levelFinishedDelegate = custom_types::MakeDelegate<System::Action_2<StandardLevelScenesTransitionSetupDataSO*, LevelCompletionResults*>*>(levelFinished);
 
