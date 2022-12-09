@@ -3,7 +3,7 @@
 name: NDK build
 
 env:
-    module_id: EndlessMode
+    module_id: endlessmode
     qmodName: EndlessMode
 
 on:
