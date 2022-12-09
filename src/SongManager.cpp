@@ -77,14 +77,19 @@ namespace EndlessMode::SongManager
 
     void CollectSongs()
     {
+        getLogger().info("getting levelCollectionNavigationController");
         auto levelCollectionNavigationController = UnityEngine::Resources::FindObjectsOfTypeAll<LevelCollectionNavigationController*>().FirstOrDefault();
 
+        getLogger().info("levelpack");
         auto levelPack = levelCollectionNavigationController->levelPack;
         if(levelPack)
             previewBeatmapLevels = levelPack->i_IAnnotatedBeatmapLevelCollection()->get_beatmapLevelCollection()->get_beatmapLevels();
-        else {
+        else
+        {
+            getLogger().info("levelsearch");
             auto levelSearchViewController = UnityEngine::Resources::FindObjectsOfTypeAll<LevelSearchViewController*>().FirstOrDefault();
-            previewBeatmapLevels = levelSearchViewController->beatmapLevelPackCollection->get_beatmapLevelCollection()->get_beatmapLevels();
+            if(levelSearchViewController)
+                previewBeatmapLevels = levelSearchViewController->beatmapLevelPackCollection->get_beatmapLevelCollection()->get_beatmapLevels();
         }
         getLogger().info("Collected %lu beatmaps", previewBeatmapLevels.Length());
     }

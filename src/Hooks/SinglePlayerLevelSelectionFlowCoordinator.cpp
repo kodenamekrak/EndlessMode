@@ -6,16 +6,21 @@
 #include "GlobalNamespace/SinglePlayerLevelSelectionFlowCoordinator.hpp"
 #include "GlobalNamespace/LevelSelectionFlowCoordinator.hpp"
 
+#include "System/Action.hpp"
+
 using namespace GlobalNamespace;
 
-MAKE_AUTO_HOOK_MATCH(SinglePlayerLevelSelectionFlowCoordinator_ActionButtonWasPressed, &SinglePlayerLevelSelectionFlowCoordinator::ActionButtonWasPressed, void, SinglePlayerLevelSelectionFlowCoordinator* self)
+bool inPracticeMenu = true;
+
+MAKE_AUTO_HOOK_MATCH(SinglePlayerLevelSelectionFlowCoordinator_StartLevelOrShow360Prompt, &SinglePlayerLevelSelectionFlowCoordinator::StartLevelOrShow360Prompt, void, SinglePlayerLevelSelectionFlowCoordinator* self, System::Action* beforeSceneSwitchCallback, bool practice)
 {
-    SinglePlayerLevelSelectionFlowCoordinator_ActionButtonWasPressed(self);
-    EndlessMode::SongManager::CollectSongs();
+    SinglePlayerLevelSelectionFlowCoordinator_StartLevelOrShow360Prompt(self, beforeSceneSwitchCallback, practice);
+    if(!practice)
+        EndlessMode::SongManager::CollectSongs();
 }
 
 MAKE_AUTO_HOOK_MATCH(LevelSelectionFlowCoordinator_DidActivate, &LevelSelectionFlowCoordinator::DidActivate, void, LevelSelectionFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
 {
-    bs_utils::Submission::enable(getModInfo());
     LevelSelectionFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
+    bs_utils::Submission::enable(getModInfo());
 }
