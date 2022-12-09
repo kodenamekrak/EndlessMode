@@ -4,7 +4,7 @@ name: NDK build
 
 env:
     module_id: EndlessMode
-    qmodName: endlessmode
+    qmodName: EndlessMode
 
 on:
   workflow_dispatch:
